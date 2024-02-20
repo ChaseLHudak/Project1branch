@@ -5,7 +5,7 @@ import splashscreen
 import userinterface
 from users import User
 import supabase_manager
-from supabase_manager import supabase,create_client
+from supabase_manager import supabase, create_client
 
 # Create the Supabase client
 supabase_client = supabase_manager.supabase
@@ -20,14 +20,13 @@ def build_root() -> tk.Tk:
     # If platform is not Linux, set to zoomed and include icon
     if os.name != "posix":
         root.state("zoomed")
-        #Load logo! change to ico extension
+        # Load logo! change to ico extension
         try:
-            root.iconbitmap("images/logo.jpg") 
+            root.iconbitmap("images/logo.jpg")
         except:
-            root.iconbitmap("../images/logo.jpg") 
+            root.iconbitmap("../images/logo.jpg")
 
-
-    # Force window to fill screen, place at top left
+            # Force window to fill screen, place at top left
     width: int = root.winfo_screenwidth()
     height: int = root.winfo_screenheight()
     root.geometry(f"{width}x{height}+0+0")
@@ -36,6 +35,7 @@ def build_root() -> tk.Tk:
     # User will have to play full screen 
     root.resizable(False, False)
     return root
+
 
 # --------------------------------
 # MAIN!

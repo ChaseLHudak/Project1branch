@@ -4,7 +4,8 @@ from tkinter import messagebox
 from typing import Dict, List
 from supabase_manager import supabase, insert_user
 
-from tkinter import messagebox
+# Make build_ui_instance a global variable to hold the pygubu.Builder instance
+build_ui_instance: pygubu.Builder = pygubu.Builder()
 
 
 def on_continue_clicked(root: tk.Tk, users, input_ids) -> None:
@@ -13,7 +14,7 @@ def on_continue_clicked(root: tk.Tk, users, input_ids) -> None:
 
     # Iterate over input IDs to retrieve user information
     for input_id, field_name in input_ids.items():
-        entry = builder.get_object(input_id)
+        entry = build_ui_instance.get_object(input_id)
         if entry:
             user_data.append((field_name.split("_")[0], entry.get()))
 
@@ -25,7 +26,7 @@ def on_continue_clicked(root: tk.Tk, users, input_ids) -> None:
     # Insert user data into Supabase table
     for i in range(0, len(user_data), 3):
         username = user_data[i][1]
-        user_id = user_data[i+1][1]
+        user_id = user_data[i + 1][1]
 
         # Convert user_id to int (assuming user_id should be an integer)
         try:
@@ -40,24 +41,19 @@ def on_continue_clicked(root: tk.Tk, users, input_ids) -> None:
     messagebox.showinfo("Success", "User information inserted successfully.")
 
 
-
-def builder(root: tk.Tk, users: dict) -> None:
+def build_ui(root: tk.Tk, users: dict) -> None:
     builder: pygubu.Builder = pygubu.Builder()
     try:
         builder.add_from_file("ui/player_interface.ui")
     except:
         builder.add_from_file("../ui/player_interface.ui")
-    # Place the main frame in the center of the root window
-    # make unresizable
+
     main_frame: tk.Frame = builder.get_object("master", root)
     main_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-    # Create frames for the teams
-    teams_frame: tk.Frame = builder.get_object("teams", main_frame)
-    red_frame: tk.Frame = builder.get_object("red_team", teams_frame)
-    blue_frame: tk.Frame = builder.get_object("blue_team", teams_frame)
+    red_frame: tk.Frame = builder.get_object("red_team", main_frame)
+    blue_frame: tk.Frame = builder.get_object("blue_team", main_frame)
 
-    # Create a dictionary of  IDs and corresponding entry field IDs
     input_ids: Dict[int, str] = {}
     fields: List[str] = {
         "red_equipment_id_",
@@ -68,19 +64,42 @@ def builder(root: tk.Tk, users: dict) -> None:
         "blue_username_"
     }
 
-    # Add each entry field ID to the dictionary of entry field IDs
     for i in range(1, 16):
         for field in fields:
-            input_ids[builder.get_object(f"{field}{i}",
-                                         red_frame if "red" in field else blue_frame).winfo_id()] = f"{field}{i}"
+            entry = builder.get_object(f"{field}{i}",
+                                       red_frame if "red" in field else blue_frame)
+            input_ids[entry.winfo_id()] = f"{field}{i}"
+            entry.bind("<Return>", lambda event, entry=entry: autofill_user_id(entry))
 
-    print(input_ids)
-
-    #  Place focus on the first entry field
-    # builder.get_object("blue_equipment_id_1", blue_frame).focus_set()
-
-    # Testing submit button
     builder.get_object("submit").configure(command=lambda: on_continue_clicked(root, users, input_ids))
 
-    # data = supabase.table("users").select("*").execute()
-    # print(data)
+
+def autofill_user_id(entry):
+    username = entry.get().strip()
+    if username:
+        try:
+            # Get the parent frame
+            parent_frame = entry.master
+            while parent_frame.winfo_name() not in {"red_team", "blue_team"}:
+                parent_frame = parent_frame.master
+
+            # Get the corresponding user ID entry widget
+            user_id_entry = parent_frame.nametowidget(entry.winfo_name().replace("username", "user_id"))
+            if user_id_entry:
+                # Query Supabase to find user ID based on username
+                query = supabase.table("users").select("user_id").eq("username", username)
+                response = query.execute()
+                print("Response from Supabase:", response)  # Debugging statement
+
+                # Check if response contains data and retrieve user ID
+                if hasattr(response, "data") and len(response.data) > 0:
+                    user_id = response.data[0]["user_id"]
+                    print("Retrieved user ID:", user_id)  # Debugging statement
+                    user_id_entry.delete(0, tk.END)  # Clear existing content
+                    user_id_entry.insert(0, str(user_id))
+                else:
+                    print("No user ID data found in response.")  # Debugging statement
+            else:
+                print("User ID entry widget not found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")

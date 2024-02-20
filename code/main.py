@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import tkinter as tk
 import os
 import splashscreen
-import userinterface
+import userinterface  # Update import statement to include the correct module
 from users import User
 import supabase_manager
 from supabase_manager import supabase, create_client
@@ -32,7 +32,7 @@ def build_root() -> tk.Tk:
     root.geometry(f"{width}x{height}+0+0")
 
     # Disable resizing
-    # User will have to play full screen 
+    # User will have to play full screen
     root.resizable(False, False)
     return root
 
@@ -48,6 +48,6 @@ root: tk.Tk = build_root()
 splash: splashscreen = splashscreen.build(root)
 root.after(3000, splash.destroy)
 
-root.after(3000, userinterface.builder, root, User)
+root.after(3000, userinterface.build_ui, root, User)  # Call build_ui instead of builder
 
 root.mainloop()

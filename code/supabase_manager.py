@@ -19,7 +19,6 @@ if url is None or key is None:
 # Create Supabase client
 supabase = create_client(url, key)
 
-
 # Function to insert user into "users" table
 from postgrest.exceptions import APIError
 
@@ -40,4 +39,3 @@ def insert_user(username, user_id):
 
 # Example usage
 insert_user('chase', 13)
-
